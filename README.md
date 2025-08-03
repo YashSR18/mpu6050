@@ -1,17 +1,21 @@
-# mpu6050
-# MPU6050 Interface with no libraries on Arduino
 
-This code manually toggles the signals and sends bit by bit data during transmissions.
+# MPU6050 interface with no libraries on Arduino
+
+- This code manually toggles the signals and sends bit by bit data during transmissions.
+## Overview
+- The MPU6050 consists of accelerometer, gyroscope, temperature sensor. <br>
+- The board consists of 8 pins, 2 for power, 2 for slave i2c, 2 for master i2c, address pin, interrupt pin. <br>
+- The accelerometer and gyroscope use 3 16bit ADCs each for their x,y,z coordinate signals. Temperature sensor use 1 16bit ADC. <br>
 
 ## Wiring
 
-The MPU6050 sensor is connected to the Arduino as follows:
+- The MPU6050 sensor is connected to the Arduino as follows:
 
-VCC = 3.3V<br>
-GND = GND<br>
-SDA = A 4<br>
-SCL = A 5<br>
-AD0 = GND (ADDRESS IS 0x68, IF SET HIGH THEN ADDRESS CHANGES TO 0x69)<br>
+- VCC = 3.3V<br>
+- GND = GND<br>
+- SDA = A 4<br>
+- SCL = A 5<br>
+- AD0 = GND (ADDRESS IS 0x68, IF SET HIGH THEN ADDRESS CHANGES TO 0x69)<br>
 
 ## Logic used 
 
@@ -31,13 +35,13 @@ The retrieved raw data is converted into signed 16-bit integers and printed to t
 #define SCL_PIN A5
 #define MPU_ADDR 0x68
   ```
-the pin definitions
+- the pin definitions
 ```cpp
 void toggle() {
   delayMicroseconds(5);      //adds delay between toggling od signals, our frequency is 50khz in this code
 }
   ```
-this adds the delay between manual toggle of the signal, we use 50khz as 100khz is the max freq in fstandrad i2c
+- this adds the delay between manual toggle of the signal, we use 50khz as 100khz is the max freq in fstandrad i2c
  ```cpp
 void initiate() {
   pinMode(SDA_PIN, OUTPUT);
@@ -46,7 +50,7 @@ void initiate() {
   digitalWrite(SCL_PIN, HIGH);
 }
   ```
-initiate transfer by activating i2c line
+- initiate transfer by activating i2c line
  ```cpp
 void start() {
   digitalWrite(SDA_PIN, HIGH); toggle();
@@ -55,7 +59,7 @@ void start() {
   digitalWrite(SCL_PIN, LOW);  toggle();
 }
 ```
-as per datasheet, start signal sent when SDA goes high to low when SCL is high
+- as per datasheet, start signal sent when SDA goes high to low when SCL is high
 ```cpp
 void stop() {
   digitalWrite(SDA_PIN, LOW);  toggle();
@@ -63,7 +67,7 @@ void stop() {
   digitalWrite(SDA_PIN, HIGH); toggle();
 }
 ```
-as defined in datasheet, stop signal sent when SDA goes low to high when SCL is high
+- as defined in datasheet, stop signal sent when SDA goes low to high when SCL is high
 ```cpp
 bool write(uint8_t data) {
   for (int i = 7; i >= 0; i--) {
@@ -79,7 +83,7 @@ bool write(uint8_t data) {
   return ack;
 }
 ```
-the write sequence is done by bit by bit data transfer and signal toggling, and recieving ACK at the end of each byte transfer
+- the write sequence is done by bit by bit data transfer and signal toggling, and recieving ACK at the end of each byte transfer
 ```cpp
 uint8_t read(bool ack) {
   uint8_t data = 0;
@@ -96,7 +100,7 @@ uint8_t read(bool ack) {
   return data;
 }
 ```
-the read is using bit by bit read on the sda pin and writes the bits into buffer called data
+- the read is using bit by bit read on the sda pin and writes the bits into buffer called data
 ```cpp
 void mpu6050_write_register(uint8_t reg, uint8_t value) {
   start();
@@ -140,7 +144,7 @@ int16_t to_int16(uint8_t high, uint8_t low) {
   return (int16_t)((high << 8) | low);            //this line adds the MSB and LSB together into a 16bit 
 }
 ```
-this function combines the 8bits of LSB and MSB and adds the MSB and LSB together into a 16bit
+- this function combines the 8bits of LSB and MSB and adds the MSB and LSB together into a 16bit
 ```cpp
 void setup() {
   Serial.begin(9600);
@@ -154,20 +158,20 @@ void loop() {
   uint8_t data[14];                       //the buffer into which the recieved data will be written during read operation
   mpu6050_read_bytes(0x3B, data, 14);
 ```
-the function called here starts reading 14 consecutive 8 bit registers from 0X3B register address, and writes recieved data <br>
+- the function called here starts reading 14 consecutive 8 bit registers from 0X3B register address, and writes recieved data <br>
 into buffer called data.
 ```cpp
   int16_t ax = to_int16(data[0], data[1]);    //Ox3B holds accelerometer x value MSB , 0x3C holds LSB
   int16_t ay = to_int16(data[2], data[3]);    //Ox3D holds accelerometer y value MSB , 0x3E holds LSB 
   int16_t az = to_int16(data[4], data[5]);    //Ox3F holds accelerometer z value MSB , 0x40 holds LSB
 ```
-combiining of LSB and MSB for each coordinate value
+- combiining of LSB and MSB for each coordinate value
 ```cpp
   int16_t gx = to_int16(data[8], data[9]);     //Ox43 holds gyro x value MSB , 0x44 holds LSB
   int16_t gy = to_int16(data[10], data[11]);     //Ox45 holds gyro y value MSB , 0x46 holds LSB
   int16_t gz = to_int16(data[12], data[13]);     //Ox47 holds gyro z value MSB , 0x48 holds LSB 
 ```
-combiining of LSB and MSB for each coordinate value
+- combining of LSB and MSB for each coordinate value
 ```cpp
   Serial.print("Ax: "); Serial.print(ax); Serial.print("  ");
   Serial.print("Ay: "); Serial.print(ay); Serial.print("  ");
@@ -181,11 +185,12 @@ combiining of LSB and MSB for each coordinate value
 }
 ```
 
-The data is read from register address 0x3B onwards, covering the accelerometer (6 bytes), temperature (2 bytes, not used), and gyroscope (6 bytes), totaling 14 bytes per cycle.
-Every send function waits for ack compulsorily.
+- The data is read from register address 0x3B onwards, covering the accelerometer (6 bytes), temperature (2 bytes, not used), and gyroscope (6 bytes),<br>
+totaling 14 bytes per cycle.
+- Every send function waits for ack compulsorily.
 
 ## Output
 Example:
-The serial monitor will display raw signed 16-bit values for each axis:
+- The serial monitor will display raw signed 16-bit values for each axis: <br>
 Ax: -123 Ay: 456 Az: 16384 Gx: 12 Gy: -15 Gz: 6
 
